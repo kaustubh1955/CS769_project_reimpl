@@ -20,4 +20,4 @@ Example of launching evaluation on the MKQA dataset in French, with retrieval fr
 ```
 python3 bergen.py generator='command-r-35b' retriever='bge-m3' reranker='bge-m3' dataset='mkqa/mkqa_fr.retrieve_en' prompt='basic_translated_langspec/fr'
 ```
-For detailed instructions, please follow the official repository of our baseline [bergen](https://github.com/naver/bergen/blob/main/documentation/multilingual.md)
+For detailed instructions, please follow the official repository of our baseline, [bergen](https://github.com/naver/bergen/blob/main/documentation/multilingual.md).
