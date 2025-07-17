@@ -1,3 +1,4 @@
-# LanguagePreference
+# Investigating Language Preference of Multilingual RAG Systems
 
-TBU
+Official Code Repository for the paper "Investigating Language Preference of Multilingual RAG Systems"
+
