@@ -44,4 +44,3 @@ python3 save_generater_pref.py
 
 ## Citation
 TBU.
-```
