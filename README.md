@@ -41,3 +41,7 @@ python3 aya_gen_pref.py
 python3 save_labse_matrix.py
 python3 save_generater_pref.py
 ```
+
+## Citation
+TBU.
+```
