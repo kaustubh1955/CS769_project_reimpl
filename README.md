@@ -35,6 +35,3 @@ Run `mlrs.py` with:
 ## Language Preference of mRAG system (Generator)
 Example of measuring language preference on the MKQA dataset in Korean, with retrieval from Wikipedia from various languages with **aya-expanse-8b**:
 Before measuring the language preference of the generator, you should get the top-5 searched passages for the specific query language (Korean) by running `bergen.py` above.
-
-
-## DKM-RAG
