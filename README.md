@@ -33,5 +33,11 @@ Run `mlrs.py` with:
 - Args Profile: `init_args1`
 
 ## Language Preference of mRAG system (Generator)
-Example of measuring language preference on the MKQA dataset in Korean, with retrieval from Wikipedia from various languages with **aya-expanse-8b**:
-Before measuring the language preference of the generator, you should get the top-5 searched passages for the specific query language (Korean) by running `bergen.py` above.
+Example of measuring language preference on the MKQA dataset in English, with retrieval from Wikipedia from various languages with **aya-expanse-8b**:
+Before measuring the language preference of the generator, you should get the top-5 searched passages for the specific query language (English) by running `get_top5_with_content.py`.
+
+```
+python3 aya_gen_pref.py
+python3 save_labse_matrix.py
+python3 save_generater_pref.py
+```
