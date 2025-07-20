@@ -21,3 +21,20 @@ Example of launching evaluation on the MKQA dataset in French, with retrieval fr
 python3 bergen.py generator='command-r-35b' retriever='bge-m3' reranker='bge-m3' dataset='mkqa/mkqa_fr.retrieve_en' prompt='basic_translated_langspec/fr'
 ```
 For detailed instructions, please follow the official repository of our baseline, [bergen](https://github.com/naver/bergen/blob/main/documentation/multilingual.md).
+
+## Language Preference of mRAG system (Retriever)
+Example of measuring language preference on the MKQA dataset in Korean, with retrieval from English Wikipedia and **bge-m3** encoder:
+Before measuring the language preference of the retriever, you should get the initial retrieval result for the specific query language (Korean) by running `bergen.py` above.
+After getting the retrieval result, run the `check_initial_rank.py` to get `ko_en_initial_rank.json` that excludes English passages.
+
+Run `mlrs.py` with:
+- Initial Rank File: `ko_en_initial_rank.json`
+- TARGET_LANG: `eng_Latn`
+- Args Profile: `init_args1`
+
+## Language Preference of mRAG system (Generator)
+Example of measuring language preference on the MKQA dataset in Korean, with retrieval from Wikipedia from various languages with **aya-expanse-8b**:
+Before measuring the language preference of the generator, you should get the top-5 searched passages for the specific query language (Korean) by running `bergen.py` above.
+
+
+## DKM-RAG
