@@ -43,4 +43,23 @@ python3 save_generater_pref.py
 ```
 
 ## Citation
-TBU.
+```bibtex
+@inproceedings{park-lee-2025-investigating,
+    title = "Investigating Language Preference of Multilingual {RAG} Systems",
+    author = "Park, Jeonghyun  and
+      Lee, Hwanhee",
+    editor = "Che, Wanxiang  and
+      Nabende, Joyce  and
+      Shutova, Ekaterina  and
+      Pilehvar, Mohammad Taher",
+    booktitle = "Findings of the Association for Computational Linguistics: ACL 2025",
+    month = jul,
+    year = "2025",
+    address = "Vienna, Austria",
+    publisher = "Association for Computational Linguistics",
+    url = "https://aclanthology.org/2025.findings-acl.295/",
+    pages = "5647--5675",
+    ISBN = "979-8-89176-256-5",
+    abstract = "Multilingual Retrieval-Augmented Generation (mRAG) systems enhance language models by integrating external multilingual information to produce context-aware responses. However, mRAG systems struggle with retrieving relevant information due to linguistic variations between queries and documents, generating inconsistent responses when multilingual sources conflict. In this work, we systematically investigate language preferences in both retrieval and generation of mRAG through a series of experiments. Our analysis indicates that retrievers tend to prefer high-resource and query languages, yet this preference does not consistently improve generation performance. Moreover, we observe that generators prefer the query language or Latin scripts, leading to inconsistent outputs. To overcome these issues, we propose Dual Knowledge Multilingual RAG (DKM-RAG), a simple yet effective framework that fuses translated multilingual passages with complementary model knowledge. Empirical results demonstrate that DKM-RAG mitigates language preference in generation and enhances performance across diverse linguistic settings. Code is available at \url{https://github.com/jeonghyunpark2002/LanguagePreference.git}"
+}
+```
