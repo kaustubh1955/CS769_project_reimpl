@@ -256,6 +256,8 @@ def eval_retrieval_kilt(experiment_folder, qrels_folder, query_dataset_name, doc
     run = defaultdict(dict)
     for i, q_id in enumerate(query_ids):
         for i, (doc_id, score) in enumerate(zip(doc_ids[i], scores[i])):
+            # Convert score to float to ensure compatibility with pytrec_eval
+            score = float(score)
             # if we have duplicate doc ids (because different passage can map to same wiki page) only write the max scoring passage
             if doc_id not in run[q_id]:
                 run[q_id].update({doc_id: score}) 

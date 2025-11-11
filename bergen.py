@@ -15,6 +15,8 @@ else:
 def main(config):
 
     from modules.rag import RAG
+
+    print("The config is ", config)
     rag = RAG(**config, config=config)
 
     if 'train' in config:

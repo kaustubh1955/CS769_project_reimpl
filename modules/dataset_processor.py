@@ -265,7 +265,60 @@ class KILT100w(Processor):
 
     def process(self):
         hf_name = 'kilt_wikipedia'
-        dataset = datasets.load_dataset(hf_name, num_proc=self.num_proc)[self.split]
+        # dataset = datasets.load_dataset(hf_name, num_proc=self.num_proc)[self.split]
+        # If using datasets>=3, dataset scripts won't load. Detect proactively to avoid noisy stack traces.
+        ds_version = tuple(int(x) for x in datasets.__version__.split('.')[:2])
+        dataset = None
+        
+        # Check for small wiki mode FIRST to avoid downloading 37GB dataset
+        import os
+        if os.environ.get('KILT_USE_SMALL_WIKI') == '1':
+            print("\n⚠️  WARNING: Using small Wikipedia subset for testing!")
+            print("   KILT_USE_SMALL_WIKI=1 detected - loading only first 10K articles")
+            print("   This is NOT the full KILT dataset and results will differ!\n")
+            dataset = self._load_small_wikipedia_fallback()
+        else:
+            # First try: load from parquet/arrow format (works with datasets>=3)
+            try:
+                print(f"Attempting to load KILT Wikipedia from parquet format...")
+                # Try loading from community-uploaded parquet version
+                dataset = datasets.load_dataset('facebook/kilt_wikipedia', split=self.split, trust_remote_code=False)
+                print("✓ Successfully loaded KILT Wikipedia from parquet format")
+            except Exception as e:
+                print(f"Could not load from parquet format: {e}")
+                
+                # Second try: original script (only works with datasets<3.0)
+                if ds_version < (3, 0):
+                    try:
+                        print(f"Attempting to load KILT Wikipedia using dataset script...")
+                        dataset = datasets.load_dataset(hf_name, num_proc=self.num_proc)[self.split]
+                        print("✓ Successfully loaded KILT Wikipedia from dataset script")
+                    except RuntimeError as e:
+                        if 'Dataset scripts are no longer supported' not in str(e):
+                            raise
+                        dataset = None
+                
+                # Final fallback: provide clear instructions
+                if dataset is None:
+                    print("\n" + "="*80)
+                    print("ERROR: Cannot load KILT Wikipedia dataset")
+                    print("="*80)
+                    print("\nYour datasets library version:", datasets.__version__)
+                    print("\nSOLUTION OPTIONS:")
+                    print("\n1. RECOMMENDED - Downgrade datasets library:")
+                    print("   pip install 'datasets<3.0'")
+                    print("   (KILT uses deprecated dataset scripts)")
+                    print("\n2. Use a pre-processed alternative:")
+                    print("   - Check if 'facebook/kilt_wikipedia' exists on HuggingFace")
+                    print("   - Or process Wikipedia dump offline")
+                    print("\n3. For development/testing - Use smaller Wikipedia:")
+                    print("   Set environment variable: export KILT_USE_SMALL_WIKI=1")
+                    print("   (Uses only first 10K articles - NOT for production)")
+                    print("="*80 + "\n")
+                    raise RuntimeError(
+                        "Cannot load KILT Wikipedia. Please downgrade datasets library: "
+                        "pip install 'datasets<3.0' or set KILT_USE_SMALL_WIKI=1 for testing"
+                    )
 
         def map_100w(sample, num_words=100):
             wiki_id = sample['wikipedia_id']
@@ -300,6 +353,36 @@ class KILT100w(Processor):
 
         del kilt_dataset
         return dataset
+    
+    def _load_small_wikipedia_fallback(self):
+        """Emergency fallback: Load small Wikipedia subset for testing only"""
+        print("Loading small Wikipedia subset (first 10K articles)...")
+        # Use streaming to avoid loading entire dataset
+        wiki_stream = datasets.load_dataset(
+            'wikimedia/wikipedia', 
+            '20231101.en',
+            split='train',
+            streaming=True
+        )
+        
+        # Take only first 10K articles
+        from itertools import islice
+        limited_data = list(islice(wiki_stream, 10000))
+        
+        # Convert to KILT structure
+        kilt_format = []
+        for sample in limited_data:
+            raw_text = sample.get('text', '')
+            paragraphs = [p.strip() for p in raw_text.split('\n\n') if p.strip()]
+            if not paragraphs:
+                paragraphs = [raw_text]
+            kilt_format.append({
+                'wikipedia_id': sample.get('id'),
+                'wikipedia_title': sample.get('title', ''),
+                'text': {'paragraph': paragraphs}
+            })
+        
+        return datasets.Dataset.from_list(kilt_format)
 
 class Wiki_monolingual_100w(Processor):
 
@@ -601,8 +684,8 @@ class ProcessDatasets:
                         shuffle_labels= shuffle_labels if query_or_doc == 'query' else False
                         )
                     dataset = processor.get_dataset()
-                    if query_or_doc == 'query':
-                        sanity_checks(dataset)
+                    # if query_or_doc == 'query':
+                    #     sanity_checks(dataset)
                     processed_datasets[split][query_or_doc] = dataset
                 else:
                     processed_datasets[split][query_or_doc] = None

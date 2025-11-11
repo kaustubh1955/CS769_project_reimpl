@@ -12,23 +12,49 @@ class MKQA(Processor):
         
     def process(self):
         mkqa = datasets.load_dataset('mkqa')
-        kilt_nq = datasets.load_dataset("kilt_tasks", "nq")
-
-        mkqa_ids = {s['example_id']:i for i, s in enumerate(mkqa[self.split])}
-        kilt_nq_train_ids = {s['id']:i for i, s in enumerate(kilt_nq[self.split])}
-
-        overlap_ids = set(mkqa_ids.keys()).intersection(set(kilt_nq_train_ids.keys()))
-        overlap_mkqa = mkqa['train'].select([mkqa_ids[i] for i in overlap_ids])
-        overlap_kilt_nq = kilt_nq['train'].select([kilt_nq_train_ids[i] for i in overlap_ids])        
-        dataset = overlap_kilt_nq.add_column(f"content", [sample['queries'][self.lang] for sample in overlap_mkqa])    
-        # discarding empty answers
-        dataset = dataset.add_column(f"label", [[a['text'] for a in sample['answers'][self.lang] if not a['text']==None] for sample in overlap_mkqa])
-        # filter out samples with empty answer
-        dataset = dataset.filter(lambda example: len(example['label'])>0)
-
-        # ranking_label: list of wikipedia_ids per answer, empty list if no provenances are present or answer is empty
-        dataset = dataset.map(lambda example: {'ranking_label': [[provenance['wikipedia_id'] for provenance in el['provenance']] if len(el[f'answer']) > 0 and len(el['provenance']) > 0 else [] for el in example['output']]})        
-        dataset = dataset.remove_columns(['meta'])
+        try:
+            kilt_nq = datasets.load_dataset("kilt_tasks", "nq")
+            kilt_nq_ids = {s['id']: i for i, s in enumerate(kilt_nq[self.split])}
+            mkqa_ids = {s['example_id']: i for i, s in enumerate(mkqa[self.split])}
+            overlap_ids = set(mkqa_ids.keys()).intersection(set(kilt_nq_ids.keys()))
+            overlap_mkqa = mkqa['train'].select([mkqa_ids[i] for i in overlap_ids])
+            overlap_kilt_nq = kilt_nq['train'].select([kilt_nq_ids[i] for i in overlap_ids])
+            dataset = overlap_kilt_nq.add_column(
+                "content", [sample['queries'][self.lang] for sample in overlap_mkqa]
+            )
+            dataset = dataset.add_column(
+                "label",
+                [[a['text'] for a in sample['answers'][self.lang] if a['text'] is not None]
+                 for sample in overlap_mkqa]
+            )
+            dataset = dataset.filter(lambda example: len(example['label']) > 0)
+            dataset = dataset.map(
+                lambda example: {
+                    'ranking_label': [
+                        [prov['wikipedia_id'] for prov in el['provenance']]
+                        if len(el['answer']) > 0 and len(el['provenance']) > 0 else []
+                        for el in example['output']
+                    ]
+                }
+            )
+            dataset = dataset.remove_columns(['meta'])
+        except RuntimeError as e:
+            if 'Dataset scripts are no longer supported' in str(e):
+                print("WARNING: 'kilt_tasks' script unsupported in this 'datasets' version. Using MKQA only (no Natural Questions overlap, ranking labels empty). Pin 'datasets<=2.20.0' for original behavior.")
+                mkqa_split = mkqa[self.split]
+                # Build dataset directly from MKQA examples
+                def build_example(sample):
+                    answers = [a['text'] for a in sample['answers'][self.lang] if a['text'] is not None]
+                    return {
+                        'id': sample['example_id'],
+                        'content': sample['queries'][self.lang],
+                        'label': answers,
+                        'ranking_label': []  # no provenance without kilt_nq alignment
+                    }
+                dataset = mkqa_split.map(build_example)
+                dataset = dataset.filter(lambda example: len(example['label']) > 0)
+            else:
+                raise
         return dataset
 
 class XORQA(Processor):

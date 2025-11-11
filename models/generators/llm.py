@@ -48,24 +48,38 @@ class LLM(Generator):
         
         # 토크나이저 로드
         print(tokenizer_name)
+        tokenizer_kwargs = {}
+        if gguf_file is not None:
+            tokenizer_kwargs['gguf_file'] = gguf_file
+        
         try:
-            self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_name, gguf_file=gguf_file)
-        except:
-            config_dict = os.path.join(tokenizer_name, 'config.json')
-            with open(config_dict, 'r') as f:
-                config = json.load(f)
-            tokenizer_name = config['_name_or_path']
-            self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_name, gguf_file=gguf_file)
+            self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_name, **tokenizer_kwargs)
+        except Exception as e:
+            print(f"Failed to load tokenizer directly: {e}")
+            # Try loading from local path if it exists
+            if os.path.exists(tokenizer_name):
+                config_dict = os.path.join(tokenizer_name, 'config.json')
+                with open(config_dict, 'r') as f:
+                    config = json.load(f)
+                tokenizer_name = config['_name_or_path']
+                self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_name, **tokenizer_kwargs)
+            else:
+                raise RuntimeError(f"Cannot load tokenizer from '{tokenizer_name}'. Error: {e}")
 
         self.tokenizer.padding_side = "left"
         self.tokenizer.pad_token = self.tokenizer.bos_token
 
         # 모델 로드 (원본 모델, bfloat16)
+        model_kwargs = {
+            'device_map': 'auto',
+            'trust_remote_code': True,
+        }
+        if gguf_file is not None:
+            model_kwargs['gguf_file'] = gguf_file
+        
         self.model = AutoModelForCausalLM.from_pretrained(
             self.model_name,
-            device_map='auto',
-            gguf_file=gguf_file,
-            trust_remote_code=True,
+            **model_kwargs
         )
 
         # bfloat16으로 변환
